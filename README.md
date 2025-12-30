@@ -1,4 +1,4 @@
-# Ranked CTF Duel Platform (MVP)
+# Ranked CTF-Rank Platform (MVP)
 
 A one-to-one ranked competitive Capture The Flag platform.
 

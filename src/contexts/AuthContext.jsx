@@ -55,6 +55,7 @@ export const AuthProvider = ({ children }) => {
         signUp: (data) => supabase.auth.signUp(data),
         signIn: (data) => supabase.auth.signInWithPassword(data),
         signOut: () => supabase.auth.signOut(),
+        resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),
         user,
         profile,
         loading

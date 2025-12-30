@@ -26,7 +26,7 @@ export default function Navigation() {
             <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
                 <Link to="/" style={{ fontSize: '1.5rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <Swords size={28} className="text-accent-primary" style={{ color: '#8b5cf6' }} />
-                    <span className="title-gradient">CTF Duel</span>
+                    <span className="title-gradient">CTF-Rank</span>
                 </Link>
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                     <Link to="/" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Lobby</Link>

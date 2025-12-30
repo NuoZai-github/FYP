@@ -1,6 +1,13 @@
 -- Enable necessary extensions
 create extension if not exists "uuid-ossp";
 
+-- 0. CLEANUP (For development/reset)
+-- Warning: This deletes all data!
+drop table if exists public.matches cascade;
+drop table if exists public.match_queue cascade;
+drop table if exists public.challenges cascade;
+drop table if exists public.profiles cascade;
+
 -- 1. USERS / PROFILES
 create table public.profiles (
   id uuid references auth.users not null primary key,
@@ -28,6 +35,9 @@ begin
   return new;
 end;
 $$ language plpgsql security definer;
+
+-- Drop trigger if exists to avoid error
+drop trigger if exists on_auth_user_created on auth.users;
 
 create trigger on_auth_user_created
   after insert on auth.users
