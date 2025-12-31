@@ -210,3 +210,20 @@ begin
   end if;
 end;
 $$;
+
+-- 7. HELPER: Get Email by Username (for login)
+create or replace function public.get_email_by_username(username_text text)
+returns text
+language plpgsql
+security definer
+as \$\$
+declare
+  found_email text;
+begin
+  select email into found_email
+  from auth.users
+  where raw_user_meta_data->>'username' = username_text
+  limit 1;
+  return found_email;
+end;
+\$\$;

@@ -29,9 +29,8 @@ export default function Navigation() {
                     <span className="title-gradient">CTF-Rank</span>
                 </Link>
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                    <Link to="/" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Lobby</Link>
+                    <Link to="/lobby" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Lobby</Link>
                     <Link to="/leaderboard" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Leaderboard</Link>
-                    <Link to="/admin" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Admin</Link>
                 </div>
             </div>
 

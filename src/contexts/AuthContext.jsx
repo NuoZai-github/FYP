@@ -53,6 +53,12 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         signUp: (data) => supabase.auth.signUp(data),
+        signInWithUsername: async ({ username, password }) => {
+            const { data: email, error: rpcError } = await supabase.rpc('get_email_by_username', { username_text: username });
+            if (rpcError) return { error: rpcError };
+            if (!email) return { error: { message: "Username not found" } };
+            return supabase.auth.signInWithPassword({ email, password });
+        },
         signIn: (data) => supabase.auth.signInWithPassword(data),
         signOut: () => supabase.auth.signOut(),
         resetPassword: (email) => supabase.auth.resetPasswordForEmail(email),
