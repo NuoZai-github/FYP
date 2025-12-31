@@ -34,8 +34,17 @@ export default function Match() {
             })
             .subscribe();
 
+        // Polling fallback every 2 seconds
+        const pollInterval = setInterval(async () => {
+            const { data } = await supabase.from('matches').select('winner_id').eq('id', id).single();
+            if (data?.winner_id) {
+                navigate(`/result/${id}`);
+            }
+        }, 2000);
+
         return () => {
             supabase.removeChannel(subscription);
+            clearInterval(pollInterval);
         };
     }, [id]);
 
