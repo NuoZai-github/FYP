@@ -141,7 +141,7 @@ export default function Lobby() {
             </header>
 
             {/* Main Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+            <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
 
                 {/* LEFT COLUMN */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
@@ -170,7 +170,7 @@ export default function Lobby() {
                                         boxShadow: '0 0 30px rgba(139, 92, 246, 0.2)', zIndex: 1
                                     }}
                                 >
-                                    Pwn Queue
+                                    Start
                                 </button>
                             </>
                         ) : (
@@ -194,7 +194,7 @@ export default function Lobby() {
                     </div>
 
                     {/* DAILY MISSIONS ROW */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="mission-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                         <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #f43f5e' }}>
                             <Target size={32} color="#f43f5e" />
                             <div>
@@ -251,7 +251,7 @@ export default function Lobby() {
                                                 background: isWin ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)',
                                                 padding: '0.25rem 0.75rem', borderRadius: '4px', fontSize: '0.85rem'
                                             }}>
-                                                {isWin ? '+100 XP' : '+0 XP'}
+                                                {isWin ? '+100 XP' : 'Loss'}
                                             </div>
                                         </div>
                                     );
@@ -277,13 +277,18 @@ export default function Lobby() {
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Win Rate</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>N/A%</div>
+                            <div style={{ background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Win Rate</div>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>
+                                    {recentMatches.length === 0
+                                        ? '—'
+                                        : `${Math.round((recentMatches.filter(m => m.winner_id === user?.id).length / recentMatches.length) * 100)}%`
+                                    }
+                                </div>
                             </div>
-                            <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '8px', textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Matches</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 700, color: '#fff' }}>{recentMatches.length}</div>
+                            <div style={{ background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Matches</div>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>{recentMatches.length}</div>
                             </div>
                         </div>
                     </div>
