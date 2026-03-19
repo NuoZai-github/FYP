@@ -24,15 +24,24 @@ export default function Leaderboard() {
                 .select('username, rank_points')
                 .order('rank_points', { ascending: false })
                 .limit(50);
-            setProfiles(data || []);
+            
+            let currentRank = 1;
+            const rankedData = (data || []).map((p, index, arr) => {
+                if (index > 0 && p.rank_points < arr[index - 1].rank_points) {
+                    currentRank = index + 1;
+                }
+                return { ...p, rank: currentRank };
+            });
+
+            setProfiles(rankedData);
             setLoading(false);
         }
         fetchLeaderboard();
     }, []);
 
     const getRankTier = (points) => {
-        if (points >= 10) return { name: 'Gold',   color: '#fbbf24' };
-        if (points >= 5)  return { name: 'Silver', color: '#94a3b8' };
+        if (points >= 300) return { name: 'Gold',   color: '#fbbf24' };
+        if (points >= 100)  return { name: 'Silver', color: '#94a3b8' };
         return                   { name: 'Bronze', color: '#cd7f32' };
     };
 
@@ -89,10 +98,13 @@ export default function Leaderboard() {
                         </thead>
                         <tbody>
                             {profiles.map((p, idx) => {
+                                const displayRank = p.rank || (idx + 1);
+                                const rankIndex = displayRank - 1; // 0 for rank 1, 1 for rank 2, etc.
+                                
                                 const tier      = getRankTier(p.rank_points);
-                                const rowStyle  = getRankRowStyle(idx);
-                                const MedalIcon = idx < 3 ? MEDAL_ICONS[idx] : null;
-                                const medalColor = idx < 3 ? MEDAL_COLORS[idx] : null;
+                                const rowStyle  = getRankRowStyle(rankIndex);
+                                const MedalIcon = rankIndex < 3 ? MEDAL_ICONS[rankIndex] : null;
+                                const medalColor = rankIndex < 3 ? MEDAL_COLORS[rankIndex] : null;
                                 const avatarColor = strToColor(p.username);
 
                                 return (
@@ -102,7 +114,7 @@ export default function Leaderboard() {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                 {MedalIcon
                                                     ? <MedalIcon size={18} color={medalColor} style={{ filter: `drop-shadow(0 0 4px ${medalColor}80)` }} />
-                                                    : <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold', fontSize: '0.95rem' }}>#{idx + 1}</span>
+                                                    : <span style={{ color: 'var(--text-secondary)', fontWeight: 'bold', fontSize: '0.95rem' }}>#{displayRank}</span>
                                                 }
                                             </div>
                                         </td>
@@ -120,7 +132,7 @@ export default function Leaderboard() {
                                                 }}>
                                                     {(p.username || '?')[0].toUpperCase()}
                                                 </div>
-                                                <span style={{ fontWeight: 600, color: idx < 3 ? '#fff' : '#e2e8f0' }}>
+                                                <span style={{ fontWeight: 600, color: rankIndex < 3 ? '#fff' : '#e2e8f0' }}>
                                                     {p.username}
                                                 </span>
                                             </div>
@@ -147,7 +159,7 @@ export default function Leaderboard() {
                                             <span style={{
                                                 fontWeight: 700,
                                                 fontSize: '1rem',
-                                                color: idx === 0 ? '#fbbf24' : '#fff',
+                                                color: rankIndex === 0 ? '#fbbf24' : '#fff',
                                             }}>
                                                 {p.rank_points}
                                             </span>
