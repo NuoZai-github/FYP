@@ -77,27 +77,49 @@ export default function TournamentRoom() {
     };
 
     const createMatchForSlot = async (bracket_id) => {
-        // Logic to create a real match if it doesn't exist
-        const slot = bracket.find(x => x.id === bracket_id);
-        if (!slot.player1_id || !slot.player2_id) return;
-        
-        // Pick a random challenge
-        const { data: challenges } = await supabase.from('challenges').select('id').limit(10);
-        const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)].id;
+        try {
+            const slot = bracket.find(x => x.id === bracket_id);
+            if (!slot || !slot.player1_id || !slot.player2_id) {
+                console.error("Invalid slot or missing players", slot);
+                return;
+            }
+            
+            // Pick a random challenge
+            const { data: challenges, error: cErr } = await supabase.from('challenges').select('id').limit(10);
+            if (cErr || !challenges || challenges.length === 0) {
+                alert("Critical Error: No CTF challenges found in database. Please contact Admin.");
+                return;
+            }
 
-        const { data: match, error } = await supabase
-            .from('matches')
-            .insert({
-                player1_id: slot.player1_id,
-                player2_id: slot.player2_id,
-                challenge_id: randomChallenge
-            })
-            .select()
-            .single();
+            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)].id;
 
-        if (match) {
-            await supabase.from('tournament_bracket').update({ match_id: match.id }).eq('id', bracket_id);
-            navigate(`/match/${match.id}`);
+            // Check if match already created by opponent (Double safety)
+            const { data: existing } = await supabase.from('tournament_bracket').select('match_id').eq('id', bracket_id).single();
+            if (existing?.match_id) {
+                navigate(`/match/${existing.match_id}`);
+                return;
+            }
+
+            const { data: match, error: mErr } = await supabase
+                .from('matches')
+                .insert({
+                    player1_id: slot.player1_id,
+                    player2_id: slot.player2_id,
+                    challenge_id: randomChallenge,
+                    status: 'active'
+                })
+                .select()
+                .single();
+
+            if (mErr) throw mErr;
+
+            if (match) {
+                await supabase.from('tournament_bracket').update({ match_id: match.id }).eq('id', bracket_id);
+                navigate(`/match/${match.id}`);
+            }
+        } catch (err) {
+            console.error("Battle creation failed:", err);
+            alert("Failed to initiate battle: " + err.message);
         }
     };
 
