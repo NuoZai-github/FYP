@@ -31,9 +31,8 @@ export default function Result() {
                 const win = data.winner_id === user.id;
                 setIsWinner(win);
 
-                // Set points display (mock update logic for visual, ideally fetched from DB diff)
-                // Assuming simple +100 / -50 logic or utilizing the simple +1/-1 from DB
-                setPointsChange(win ? 100 : 25);
+                // Set points display to match DB logic (+100 / -50)
+                setPointsChange(win ? 100 : 50);
 
                 if (win) {
                     launchConfetti();
@@ -152,7 +151,7 @@ export default function Result() {
                             </div>
                             <div style={{ background: 'rgba(239, 68, 68, 0.1)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
                                 <div style={{ fontSize: '0.9rem', color: '#fca5a5' }}>Rank Points</div>
-                                <div style={{ fontWeight: 800, fontSize: '2rem', color: '#ef4444' }}>-50</div>
+                                <div style={{ fontWeight: 800, fontSize: '2rem', color: '#ef4444' }}>-{pointsChange}</div>
                             </div>
                         </div>
                     </>

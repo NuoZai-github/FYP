@@ -13,6 +13,9 @@ export default function Lobby() {
     const [pollingId, setPollingId] = useState(null);
     const [topPlayers, setTopPlayers] = useState([]);
     const [recentMatches, setRecentMatches] = useState([]);
+    const [systemNews, setSystemNews] = useState([]);
+    const [missions, setMissions] = useState([]);
+    const [userStats, setUserStats] = useState({ total_matches: 0, total_wins: 0 });
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -46,8 +49,37 @@ export default function Lobby() {
             .not('winner_id', 'is', null) // Only completed matches
             .order('created_at', { ascending: false })
             .limit(5);
-
         if (matches) setRecentMatches(matches);
+
+        // 3. Fetch Real System News
+        const { data: news } = await supabase
+            .from('system_news')
+            .select('*')
+            .order('created_at', { ascending: false })
+            .limit(3);
+        if (news) setSystemNews(news);
+
+        // 4. Fetch User Stats (Total wins/matches)
+        const { data: stats } = await supabase
+            .from('user_stats')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+        if (stats) setUserStats(stats);
+
+        // 5. Fetch Daily Missions & Progress
+        const { data: userMissions } = await supabase
+            .from('missions')
+            .select('*, user_mission_progress!inner(*) ')
+            .eq('user_mission_progress.user_id', user.id);
+        
+        // Fallback: If no progress found, fetch all mission definitions
+        if (!userMissions || userMissions.length === 0) {
+            const { data: allMissions } = await supabase.from('missions').select('*').limit(2);
+            if (allMissions) setMissions(allMissions.map(m => ({ ...m, user_mission_progress: [{ current_count: 0, is_completed: false }] })));
+        } else {
+            setMissions(userMissions);
+        }
     };
 
     const handleJoinMatch = async () => {
@@ -195,22 +227,36 @@ export default function Lobby() {
 
                     {/* DAILY MISSIONS ROW */}
                     <div className="mission-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #f43f5e' }}>
-                            <Target size={32} color="#f43f5e" />
-                            <div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>DAILY OBJECTIVE</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>First Blood</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Win 1 Match Today (0/1)</div>
-                            </div>
-                        </div>
-                        <div className="glass-panel" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', borderLeft: '4px solid #10b981' }}>
-                            <Star size={32} color="#10b981" />
-                            <div>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', fontWeight: 600 }}>SEASON PASS</div>
-                                <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>Weekly Hacker</div>
-                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Accumulate 500 XP (120/500)</div>
-                            </div>
-                        </div>
+                        {missions.length === 0 ? (
+                            <div className="glass-panel" style={{ padding: '1.5rem', color: 'var(--text-secondary)' }}>No Missions available.</div>
+                        ) : missions.slice(0, 2).map((m, idx) => {
+                            const progress = m.user_mission_progress?.[0] || { current_count: 0, is_completed: false };
+                            const isDone = progress.is_completed;
+                            const pct = Math.min(100, (progress.current_count / m.goal_count) * 100);
+                            
+                            return (
+                                <div key={m.id} className="glass-panel" style={{ 
+                                    padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem', 
+                                    borderLeft: `4px solid ${isDone ? '#10b981' : idx === 0 ? '#f43f5e' : '#8b5cf6'}`,
+                                    opacity: isDone ? 0.7 : 1
+                                }}>
+                                    {idx === 0 ? <Target size={32} color="#f43f5e" /> : <Star size={32} color="#10b981" />}
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
+                                            <span>{idx === 0 ? 'DAILY OBJECTIVE' : 'OPERATIONAL TASK'}</span>
+                                            {isDone && <Check size={14} color="#10b981" />}
+                                        </div>
+                                        <div style={{ fontSize: '1.1rem', fontWeight: 700 }}>{m.title}</div>
+                                        <div style={{ marginTop: '0.5rem', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                                            <div style={{ width: `${pct}%`, height: '100%', background: isDone ? '#10b981' : idx === 0 ? '#f43f5e' : '#8b5cf6' }} />
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem' }}>
+                                            {m.description} ({progress.current_count}/{m.goal_count})
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     {/* RECENT ACTIVITY */}
@@ -280,31 +326,42 @@ export default function Lobby() {
                             <div style={{ background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Win Rate</div>
                                 <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>
-                                    {recentMatches.length === 0
-                                        ? '—'
-                                        : `${Math.round((recentMatches.filter(m => m.winner_id === user?.id).length / recentMatches.length) * 100)}%`
+                                    {userStats.total_matches === 0
+                                        ? '0%'
+                                        : `${Math.round((userStats.total_wins / userStats.total_matches) * 100)}%`
                                     }
                                 </div>
                             </div>
                             <div style={{ background: 'rgba(255,255,255,0.04)', padding: '1rem', borderRadius: '10px', textAlign: 'center', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Matches</div>
-                                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>{recentMatches.length}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.4rem' }}>Total Matches</div>
+                                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#fff' }}>{userStats.total_matches}</div>
                             </div>
                         </div>
                     </div>
 
                     {/* NEWS / BROADCAST */}
                     <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem' }}>System Feed</h3>
+                        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Bell size={16} /> System Feed
+                        </h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ borderLeft: '2px solid #06b6d4', paddingLeft: '0.75rem' }}>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e2e8f0' }}>New Challenge Added</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>"Buffer Overflow 101" is now available in ranked pool.</div>
-                            </div>
-                            <div style={{ borderLeft: '2px solid #8b5cf6', paddingLeft: '0.75rem' }}>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e2e8f0' }}>Season 2 Coming Soon</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>Rank reset scheduled for Jan 15th.</div>
-                            </div>
+                            {systemNews.length === 0 ? (
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>No active broadcasts.</div>
+                            ) : systemNews.map(item => (
+                                <div key={item.id} style={{ 
+                                    borderLeft: `2px solid ${
+                                        item.type === 'warning' ? '#fbbf24' : 
+                                        item.type === 'error' ? '#f43f5e' : 
+                                        item.type === 'success' ? '#10b981' : '#06b6d4'
+                                    }`, 
+                                    paddingLeft: '0.75rem' 
+                                }}>
+                                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: '#e2e8f0' }}>{item.title}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.25rem', lineHeight: '1.4' }}>
+                                        {item.content}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
 

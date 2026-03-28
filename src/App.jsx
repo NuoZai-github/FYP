@@ -6,6 +6,7 @@ import Lobby from './pages/Lobby';
 import Match from './pages/Match';
 import Result from './pages/Result';
 import Leaderboard from './pages/Leaderboard';
+import Admin from './pages/Admin';
 import Navigation from './components/Navigation';
 
 const PrivateRoute = ({ children }) => {
@@ -35,6 +36,7 @@ function App() {
                       <Route path="/match/:id" element={<Match />} />
                       <Route path="/result/:id" element={<Result />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/admin" element={<Admin />} />
                       {/* Redirect unknown routes to lobby */}
                       <Route path="*" element={<Navigate to="/lobby" />} />
                     </Routes>
