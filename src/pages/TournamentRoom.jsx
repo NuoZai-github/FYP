@@ -105,8 +105,7 @@ export default function TournamentRoom() {
                 .insert({
                     player1_id: slot.player1_id,
                     player2_id: slot.player2_id,
-                    challenge_id: randomChallenge,
-                    status: 'active'
+                    challenge_id: randomChallenge
                 })
                 .select()
                 .single();
@@ -217,11 +216,15 @@ export default function TournamentRoom() {
                                                 {/* Action Button */}
                                                 {(slot.player1_id === user.id || slot.player2_id === user.id) && !slot.winner_id && (
                                                     <button 
-                                                        className="btn-primary" 
-                                                        style={{ width: '100%', borderRadius: 0, padding: '0.4rem', fontSize: '0.8rem' }}
+                                                        className={slot.match_id ? "btn-warn" : "btn-primary"} 
+                                                        style={{ width: '100%', borderRadius: 0, padding: '0.4rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
                                                         onClick={() => slot.match_id ? navigate(`/match/${slot.match_id}`) : createMatchForSlot(slot.id)}
                                                     >
-                                                        <Sword size={14} /> BATTLE
+                                                        {slot.match_id ? (
+                                                            <><Zap size={14} /> OPPONENT READY - ENTER</>
+                                                        ) : (
+                                                            <><Sword size={14} /> BATTLE</>
+                                                        )}
                                                     </button>
                                                 )}
                                             </div>
