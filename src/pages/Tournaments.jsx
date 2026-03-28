@@ -152,8 +152,12 @@ export default function Tournaments() {
                                     className="btn-primary"
                                     onClick={async () => {
                                         // Quick Join Logic
-                                        const { error } = await supabase.from('tournament_participants').insert({ tournament_id: t.id, user_id: user.id });
-                                        // Error could be already joined (23505), ignore that
+                                        try {
+                                            const { data: tourney } = await supabase.from('tournament_participants').select('user_id').eq('tournament_id', t.id).eq('user_id', user.id).single();
+                                            if (!tourney) {
+                                                await supabase.from('tournament_participants').insert({ tournament_id: t.id, user_id: user.id });
+                                            }
+                                        } catch (err) { /* ignore single error */ }
                                         navigate(`/tournament/${t.id}`);
                                     }}
                                     style={{ flex: 1, padding: '0.6rem 1rem', fontSize: '0.85rem' }}
