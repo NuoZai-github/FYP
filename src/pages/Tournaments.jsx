@@ -19,6 +19,17 @@ export default function Tournaments() {
 
     useEffect(() => {
         fetchTournaments();
+        // Subscribe to NEW tournaments or status changes
+        const channel = supabase
+            .channel('tournaments-list')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
+                fetchTournaments();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const fetchTournaments = async () => {
