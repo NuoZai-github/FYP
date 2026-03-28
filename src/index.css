@@ -281,6 +281,9 @@ button {
 .nav-link {
   position: relative;
   transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .nav-link:hover {

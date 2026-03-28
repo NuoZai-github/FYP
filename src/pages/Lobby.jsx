@@ -147,15 +147,34 @@ export default function Lobby() {
     return (
         <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
 
-            {/* Header Section */}
-            <header style={{ marginBottom: '2.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'end' }}>
-                <div>
-                    <h1 style={{ fontSize: '2.5rem', marginBottom: '0.5rem', fontWeight: 700 }}>
-                        Dashboard
-                    </h1>
-                    <p style={{ color: 'var(--text-secondary)' }}>
-                        Welcome back, Operator <span style={{ color: '#fff', fontWeight: 600 }}>{profile?.username}</span>
-                    </p>
+            {/* Lobby Header */}
+            <div className="lobby-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    <div style={{ 
+                        width: '64px', height: '64px', borderRadius: '16px', 
+                        background: 'var(--primary-gradient)', display: 'flex', 
+                        alignItems: 'center', justifyContent: 'center', fontSize: '1.75rem', 
+                        fontWeight: 800, color: 'white', border: '2px solid rgba(255,255,255,0.1)'
+                    }}>
+                        {profile?.username ? profile.username[0] : '?'}
+                    </div>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <h1 style={{ fontSize: '1.75rem', fontWeight: 800 }}>Welcome back, {profile?.username}</h1>
+                            <span style={{ 
+                                background: 'rgba(236, 72, 153, 0.2)', color: '#ec4899', 
+                                padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.75rem', 
+                                fontWeight: 700, border: '1px solid rgba(236, 72, 153, 0.3)'
+                            }}>
+                                LVL {Math.floor((profile?.xp || 0) / 1000) + 1}
+                            </span>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: rankInfo.color, fontWeight: 700 }}>{rankInfo.name}</span> 
+                            • {profile?.rank_points} RP 
+                            • <span style={{ color: '#8b5cf6' }}>{profile?.xp || 0} XP</span>
+                        </p>
+                    </div>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                     <div className="glass-panel" style={{ padding: '0.75rem 1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -170,7 +189,7 @@ export default function Lobby() {
                         </div>
                     </div>
                 </div>
-            </header>
+            </div>
 
             {/* Main Grid */}
             <div className="dashboard-main-grid" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
@@ -312,14 +331,29 @@ export default function Lobby() {
 
                     {/* STATS OVERVIEW */}
                     <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                        <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1.5rem' }}>Career Stats</h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Career Progress</h3>
+                            <span style={{ fontSize: '0.8rem', color: '#8b5cf6', fontWeight: 600 }}>LEVEL {Math.floor((profile?.xp || 0) / 1000) + 1}</span>
+                        </div>
+                        
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
                             <span style={{ fontSize: '2.5rem', fontWeight: 700, color: '#fff' }}>{profile?.rank_points || 0}</span>
                             <span style={{ color: 'var(--text-secondary)' }}>/ {rankInfo.next} RP</span>
                         </div>
-                        {/* Progress Bar */}
-                        <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginBottom: '1.5rem', overflow: 'hidden' }}>
+                        {/* Progress Bar (Rank) */}
+                        <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', marginBottom: '0.75rem', overflow: 'hidden' }}>
                             <div style={{ height: '100%', width: `${rankInfo.progress}%`, background: rankInfo.color, borderRadius: '3px', transition: 'width 1s ease' }} />
+                        </div>
+                        
+                        {/* XP Bar */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '0.3rem', textTransform: 'uppercase', fontWeight: 700 }}>
+                                <span>XP PROGRESS</span>
+                                <span>{profile?.xp % 1000} / 1000</span>
+                            </div>
+                            <div style={{ height: '4px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${(profile?.xp % 1000) / 10}%`, background: '#8b5cf6', borderRadius: '2px', transition: 'width 1s ease' }} />
+                            </div>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>

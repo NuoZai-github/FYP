@@ -1,10 +1,11 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { LogOut, Trophy, Swords, Shield } from 'lucide-react';
 
 export default function Navigation() {
     const { signOut, profile } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const handleLogout = async () => {
         await signOut();
@@ -31,6 +32,11 @@ export default function Navigation() {
                 <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
                     <Link to="/lobby" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Lobby</Link>
                     <Link to="/leaderboard" className="nav-link" style={{ color: 'var(--text-secondary)', fontWeight: 500 }}>Leaderboard</Link>
+                    <Link to="/tournaments" className={`nav-link ${location.pathname === '/tournaments' ? 'active' : ''}`}>
+                        <Trophy size={18} />
+                        <span>Tournaments</span>
+                    </Link>
+
                     {profile?.is_admin && (
                         <Link to="/admin" className="nav-link" style={{ color: '#ec4899', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
                             <Shield size={14} /> Admin

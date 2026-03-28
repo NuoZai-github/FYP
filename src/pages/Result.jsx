@@ -7,7 +7,7 @@ import confetti from 'canvas-confetti';
 
 export default function Result() {
     const { id } = useParams();
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const navigate = useNavigate();
     const [match, setMatch] = useState(null);
     const [isWinner, setIsWinner] = useState(null);
@@ -113,14 +113,29 @@ export default function Result() {
                             Mission Accomplished
                         </p>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '3rem' }}>
-                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.5rem', borderRadius: '12px' }}>
-                                <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Challenge</div>
-                                <div style={{ fontWeight: 600, fontSize: '1.1rem', color: '#fff' }}>{match.challenge?.title}</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1.25rem', borderRadius: '12px', textAlign: 'left' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Challenge</div>
+                                <div style={{ fontWeight: 600, fontSize: '1rem', color: '#fff', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{match.challenge?.title}</div>
                             </div>
-                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-                                <div style={{ fontSize: '0.9rem', color: '#86efac' }}>Rank Points</div>
-                                <div style={{ fontWeight: 800, fontSize: '2rem', color: '#22c55e' }}>+{pointsChange}</div>
+                            <div style={{ background: 'rgba(34, 197, 94, 0.1)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#86efac', textTransform: 'uppercase' }}>Rating</div>
+                                <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#22c55e' }}>+{pointsChange}</div>
+                            </div>
+                            <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                                <div style={{ fontSize: '0.8rem', color: '#a78bfa', textTransform: 'uppercase' }}>XP Gained</div>
+                                <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#8b5cf6' }}>+100</div>
+                            </div>
+                        </div>
+
+                        {/* XP Progress Bar */}
+                        <div style={{ marginBottom: '3rem', textAlign: 'left', background: 'rgba(0,0,0,0.2)', padding: '1.25rem', borderRadius: '16px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.6rem', alignItems: 'center' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: 600 }}>NEXT LEVEL PROGRESS</span>
+                                <span style={{ fontSize: '0.9rem', color: '#fff', fontWeight: 700 }}>{profile?.xp % 1000} / 1000 XP</span>
+                            </div>
+                            <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', width: `${(profile?.xp % 1000) / 10}%`, background: '#8b5cf6', transition: 'width 1s ease 0.5s' }} />
                             </div>
                         </div>
                     </>

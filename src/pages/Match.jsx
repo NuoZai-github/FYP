@@ -1,181 +1,199 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
-import { Timer, Send, AlertTriangle } from 'lucide-react';
+import { 
+    Terminal, Shield, AlertCircle, Timer, 
+    Zap, Lock, Cpu, Activity, Globe, Info
+} from 'lucide-react';
 
 export default function Match() {
     const { id } = useParams();
-    const { user } = useAuth();
-    const navigate = useNavigate();
-
+    const { user, profile } = useAuth();
     const [match, setMatch] = useState(null);
     const [challenge, setChallenge] = useState(null);
     const [opponent, setOpponent] = useState(null);
     const [flag, setFlag] = useState('');
-    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [message, setMessage] = useState(null);
+    const [terminalOutput, setTerminalOutput] = useState([
+        { text: 'SYSTEM INITIALIZED...', type: 'info' },
+        { text: 'ESTABLISHING SECURE CONNECTION...', type: 'info' },
+    ]);
+    const navigate = useNavigate();
+    const terminalEndRef = useRef(null);
 
     useEffect(() => {
-        fetchMatchDetails();
+        fetchMatchData();
 
-        // Subscribe to match updates (for opponent win)
-        const subscription = supabase
-            .channel(`match-${id}`)
-            .on('postgres_changes', {
-                event: 'UPDATE',
-                schema: 'public',
-                table: 'matches',
-                filter: `id=eq.${id}`
+        // REAL-TIME SUBSCRIPTION
+        const channel = supabase
+            .channel(`match:${id}`)
+            .on('postgres_changes', { 
+                event: 'UPDATE', 
+                schema: 'public', 
+                table: 'matches', 
+                filter: `id=eq.${id}` 
             }, (payload) => {
                 if (payload.new.winner_id) {
-                    navigate(`/result/${id}`);
+                    addTerminalEntry(`MATCH TERMINATED. WINNER_ID DETECTED.`, 'warning');
+                    setTimeout(() => navigate(`/result/${id}`), 1000);
                 }
             })
             .subscribe();
 
-        // Polling fallback every 2 seconds
-        const pollInterval = setInterval(async () => {
-            const { data } = await supabase.from('matches').select('winner_id').eq('id', id).single();
-            if (data?.winner_id) {
-                navigate(`/result/${id}`);
-            }
-        }, 2000);
-
-        return () => {
-            supabase.removeChannel(subscription);
-            clearInterval(pollInterval);
-        };
+        return () => supabase.removeChannel(channel);
     }, [id]);
 
-    const fetchMatchDetails = async () => {
-        const { data: matchData, error: matchError } = await supabase
-            .from('matches')
-            .select('*')
-            .eq('id', id)
-            .single();
+    useEffect(() => {
+        terminalEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [terminalOutput]);
 
-        if (matchError || !matchData) {
-            // Handle error (redirect?)
-            console.error("Match load error", matchError);
-            return;
-        }
-
-        // Check if match ended
-        if (matchData.winner_id) {
-            navigate(`/result/${id}`);
-            return;
-        }
-
-        setMatch(matchData);
-
-        // Fetch Challenge
-        const { data: challengeData } = await supabase
-            .from('challenges')
-            .select('title, description') // Secure selection
-            .eq('id', matchData.challenge_id)
-            .single();
-
-        setChallenge(challengeData);
-
-        // Fetch Opponent
-        const opponentId = matchData.player1_id === user.id ? matchData.player2_id : matchData.player1_id;
-        const { data: oppData } = await supabase.from('profiles').select('username, rank_points').eq('id', opponentId).single();
-        setOpponent(oppData);
+    const addTerminalEntry = (text, type = 'info') => {
+        setTerminalOutput(prev => [...prev, { text: `[${new Date().toLocaleTimeString()}] ${text}`, type }]);
     };
 
-    // Timer logic
-    const [elapsed, setElapsed] = useState('00:00');
-    useEffect(() => {
-        if (!match?.start_time) return;
-        const interval = setInterval(() => {
-            const start = new Date(match.start_time).getTime();
-            const now = new Date().getTime();
-            const diff = Math.floor((now - start) / 1000);
-
-            if (diff >= 0) {
-                const m = Math.floor(diff / 60).toString().padStart(2, '0');
-                const s = (diff % 60).toString().padStart(2, '0');
-                setElapsed(`${m}:${s}`);
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [match]);
-
-    const submitFlag = async (e) => {
-        e.preventDefault();
-        setSubmitting(true);
-        setError('');
-
+    const fetchMatchData = async () => {
         try {
-            const { data, error } = await supabase.rpc('submit_flag', {
-                match_id_input: id,
-                flag_submission: flag
-            });
+            const { data: matchData } = await supabase
+                .from('matches')
+                .select('*')
+                .eq('id', id)
+                .single();
 
-            if (error) throw error;
+            if (matchData) {
+                setMatch(matchData);
+                const opponentId = matchData.player1_id === user.id ? matchData.player2_id : matchData.player1_id;
+                
+                // Fetch Opponent
+                const { data: oppData } = await supabase.from('profiles').select('username').eq('id', opponentId).single();
+                if (oppData) setOpponent(oppData);
 
-            if (data.success) {
-                navigate(`/result/${id}`);
-            } else {
-                setError(data.message);
+                // Fetch Challenge
+                const { data: challengeData } = await supabase
+                    .from('challenges')
+                    .select('title, description, category, difficulty')
+                    .eq('id', matchData.challenge_id)
+                    .single();
+                if (challengeData) setChallenge(challengeData);
+                
+                addTerminalEntry('TARGET ACQUIRED: ' + (challengeData?.title || 'Unknown'), 'success');
+                addTerminalEntry('OPPONENT IDENTIFIED: ' + (oppData?.username || 'Unknown'), 'warning');
             }
         } catch (err) {
-            setError(err.message);
+            addTerminalEntry('ERROR: FAILED TO FETCH MISSION DATA', 'error');
         } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setSubmitting(true);
+        addTerminalEntry(`ATTEMPTING FLAG SUBMISSION...`, 'info');
+
+        const { data, error } = await supabase.rpc('submit_flag', {
+            match_id_input: id,
+            flag_submission: flag
+        });
+
+        if (data?.success) {
+            addTerminalEntry('ACCESS GRANTED. FLAG AUTHENTICATED.', 'success');
+            setTimeout(() => navigate(`/result/${id}`), 800);
+        } else {
+            addTerminalEntry(`ACCESS DENIED: ${data?.message || 'INVALID FLAG'}`, 'error');
+            setMessage(data?.message || 'Incorrect flag.');
             setSubmitting(false);
         }
     };
 
-    if (!match || !challenge) return <div className="center-container">Loading...</div>;
+    if (loading) return (
+        <div className="center-container">
+            <Cpu className="animate-spin" size={48} color="var(--primary)" />
+        </div>
+    );
 
     return (
-        <div className="page-container">
-            <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                <div>
-                    <h2 className="title-gradient" style={{ fontSize: '1.5rem' }}>Match in Progress</h2>
-                    {opponent && <div style={{ color: 'var(--text-secondary)' }}>Vs. {opponent.username} ({opponent.rank_points} pts)</div>}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: 'bold' }}>
-                    <Timer size={20} />
-                    <span>{elapsed}</span>
-                </div>
-            </header>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
-                <div className="glass-panel" style={{ padding: '2rem' }}>
-                    <h3 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#fff' }}>{challenge.title}</h3>
-                    <div style={{ whiteSpace: 'pre-wrap', color: 'var(--text-secondary)', lineHeight: '1.8' }}>
-                        {challenge.description}
+        <div className="page-container" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', maxWidth: '1400px', margin: '0 auto', height: 'calc(100vh - 120px)' }}>
+            
+            {/* Main Terminal Area */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', overflow: 'hidden' }}>
+                <div className="glass-panel" style={{ padding: '1.5rem', borderLeft: '4px solid var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>{challenge?.title}</h2>
+                            <span className="badge" style={{ background: challenge?.difficulty === 'Hard' ? '#f43f5e20' : '#10b98120', color: challenge?.difficulty === 'Hard' ? '#f43f5e' : '#10b981' }}>
+                                {challenge?.difficulty}
+                            </span>
+                        </div>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Deploying environment: {challenge?.category} Sector</p>
                     </div>
                 </div>
 
-                <div className="glass-panel" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    <h3 style={{ fontSize: '1.2rem', color: '#fff' }}>Submit Flag</h3>
-
-                    <form onSubmit={submitFlag} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <input
-                            type="text"
-                            className="input-field"
-                            placeholder="Enter flag here..."
-                            value={flag}
-                            onChange={(e) => setFlag(e.target.value)}
-                        />
-
-                        {error && (
-                            <div style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.9rem' }}>
-                                <AlertTriangle size={16} />
-                                {error}
+                <div className="glass-panel" style={{ flex: 1, padding: '2rem', overflowY: 'auto', background: 'rgba(2, 6, 23, 0.4)' }}>
+                    <h3 style={{ fontSize: '1rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Info size={16} /> Mission Intelligence
+                    </h3>
+                    <div style={{ lineHeight: '1.6', fontSize: '1.05rem', color: '#e2e8f0' }}>
+                        {challenge?.description}
+                    </div>
+                    
+                    <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem' }}>
+                            <div style={{ position: 'relative', flex: 1 }}>
+                                <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
+                                <input 
+                                    className="input-field" placeholder="Enter Flag: CTF{...}"
+                                    value={flag} onChange={(e) => setFlag(e.target.value)}
+                                    style={{ paddingLeft: '3rem', marginBottom: 0, background: 'rgba(0,0,0,0.5)' }}
+                                    disabled={submitting}
+                                />
                             </div>
-                        )}
+                            <button className="btn-primary" disabled={submitting} style={{ padding: '0 2rem' }}>
+                                {submitting ? 'VALIDATING...' : 'SUBMIT'}
+                            </button>
+                        </form>
+                        {message && <div style={{ marginTop: '1rem', color: '#f43f5e', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <AlertCircle size={14} /> {message}
+                        </div>}
+                    </div>
+                </div>
+            </div>
 
-                        <button type="submit" className="btn-primary" disabled={submitting}>
-                            {submitting ? 'Submitting...' : 'Submit Flag'} <Send size={18} />
-                        </button>
-                    </form>
+            {/* Sidebar */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                    <h3 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem' }}>Operator Tracking</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: '40px', height: '40px', background: 'var(--primary-gradient)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{profile?.username ? profile.username[0] : 'U'}</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{profile?.username} (YOU)</div>
+                                <div style={{ fontSize: '0.75rem', color: '#10b981' }}><Activity size={10} /> ACTIVE</div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: '40px', height: '40px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{opponent?.username ? opponent.username[0] : '?'}</div>
+                            <div style={{ flex: 1 }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{opponent?.username || 'Finding...'}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}><Globe size={10} /> STREAMING...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <div style={{ marginTop: 'auto', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                        <p>Format example: CTF{'{secret_code}'}</p>
+                <div className="glass-panel" style={{ flex: 1, padding: '1.25rem', display: 'flex', flexDirection: 'column', background: '#020617' }}>
+                    <h3 style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Terminal size={14} /> Console Logs
+                    </h3>
+                    <div style={{ flex: 1, overflowY: 'auto', fontFamily: 'monospace', fontSize: '0.8rem', color: '#94a3b8', lineHeight: '1.4' }}>
+                        {terminalOutput.map((log, i) => (
+                            <div key={i} style={{ marginBottom: '0.4rem', color: log.type === 'error' ? '#f43f5e' : log.type === 'success' ? '#10b981' : log.type === 'warning' ? '#fbbf24' : '#94a3b8' }}>
+                                {log.text}
+                            </div>
+                        ))}
+                        <div ref={terminalEndRef} />
                     </div>
                 </div>
             </div>
