@@ -12,10 +12,10 @@ export default function Result() {
     const [match, setMatch] = useState(null);
     const [isWinner, setIsWinner] = useState(null);
     const [pointsChange, setPointsChange] = useState(0);
+    const [tournamentId, setTournamentId] = useState(null);
 
     useEffect(() => {
         const fetchResult = async () => {
-            // Fetch match details including winner and challenge info
             const { data, error } = await supabase
                 .from('matches')
                 .select(`
@@ -30,13 +30,17 @@ export default function Result() {
                 setMatch(data);
                 const win = data.winner_id === user.id;
                 setIsWinner(win);
-
-                // Set points display to match DB logic (+100 / -50)
                 setPointsChange(win ? 100 : 50);
 
-                if (win) {
-                    launchConfetti();
-                }
+                if (win) launchConfetti();
+
+                // Check if tournament match
+                const { data: b } = await supabase
+                    .from('tournament_bracket')
+                    .select('tournament_id')
+                    .eq('match_id', id)
+                    .single();
+                if (b) setTournamentId(b.tournament_id);
             }
         };
         fetchResult();
@@ -174,13 +178,13 @@ export default function Result() {
 
                 <button
                     className="btn-primary"
-                    onClick={() => navigate('/lobby')}
+                    onClick={() => tournamentId ? navigate(`/tournament/${tournamentId}`) : navigate('/lobby')}
                     style={{
                         width: '100%', padding: '1.25rem', fontSize: '1.1rem',
                         background: isWinner ? 'var(--accent-primary)' : '#334155'
                     }}
                 >
-                    Return to Lobby <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
+                    {tournamentId ? 'Continue Tournament' : 'Return to Lobby'} <ArrowRight size={20} style={{ marginLeft: '0.5rem' }} />
                 </button>
             </div>
         </div>

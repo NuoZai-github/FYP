@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import {
     Swords, Loader2, Trophy, Clock, Target,
-    Shield, Activity, ChevronRight, User, Bell, Star, Zap
+    Shield, Activity, ChevronRight, User, Bell, Star, Zap, Check
 } from 'lucide-react';
 
 export default function Lobby() {
