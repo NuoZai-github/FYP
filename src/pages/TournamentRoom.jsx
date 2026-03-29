@@ -162,38 +162,59 @@ export default function TournamentRoom() {
     const isCreator = tournament?.creator_id === user.id;
 
     return (
-        <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
+        <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem', position: 'relative' }}>
             
-            
-            {/* CHAMPION BANNER */}
+            {/* FULL SCREEN CHAMPION CELEBRATION */}
             {bracket.find(s => s.round === 3 && s.winner_id) && (
-                <div className="glass-panel" style={{ 
-                    padding: '2rem', marginBottom: '2rem', textAlign: 'center', 
-                    background: 'linear-gradient(45deg, rgba(251,191,36,0.1), rgba(251,191,36,0.02))',
-                    border: '1px solid rgba(251,191,36,0.3)',
-                    position: 'relative', overflow: 'hidden',
-                    animation: 'pulse-gold 2s infinite ease-in-out'
+                <div style={{ 
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+                    zIndex: 9999, pointerEvents: 'none', // Allows clicking through if needed
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'radial-gradient(circle, rgba(251,191,36,0.15) 0%, transparent 70%)',
+                    animation: 'fade-in 1s ease'
                 }}>
-                    <div style={{ position: 'absolute', top: -20, left: -20, opacity: 0.1 }}><Crown size={120} color="#fbbf24" /></div>
-                    <div style={{ position: 'absolute', bottom: -20, right: -20, opacity: 0.1 }}><Crown size={120} color="#fbbf24" /></div>
-                    
-                    <div style={{ position: 'relative', zIndex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-                            <div style={{ background: '#fbbf24', color: '#000', padding: '0.4rem 1.25rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.1em' }}>
-                                TOURNAMENT CHAMPION
+                    <div style={{ 
+                        padding: '4rem', textAlign: 'center', borderRadius: '40px',
+                        background: 'rgba(10, 10, 10, 0.85)', backdropFilter: 'blur(20px)',
+                        border: '2px solid rgba(251, 191, 36, 0.5)',
+                        boxShadow: '0 0 100px rgba(251, 191, 36, 0.3)',
+                        animation: 'pop-in 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                        pointerEvents: 'auto'
+                    }}>
+                        <div style={{ marginBottom: '2rem' }}>
+                            <div className="animate-pulse" style={{ display: 'inline-block' }}>
+                                <Crown size={120} color="#fbbf24" style={{ filter: 'drop-shadow(0 0 30px rgba(251, 191, 36, 0.8))' }} />
                             </div>
                         </div>
-                        <h2 style={{ fontSize: '3rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
-                            <Crown size={40} color="#fbbf24" />
+                        
+                        <div style={{ background: '#fbbf24', color: '#000', padding: '0.5rem 2rem', borderRadius: '100px', fontSize: '1rem', fontWeight: 900, letterSpacing: '0.2em', marginBottom: '1.5rem', display: 'inline-block' }}>
+                            GRAND CHAMPION
+                        </div>
+                        
+                        <h1 style={{ fontSize: '5rem', fontWeight: 900, color: '#fff', margin: 0, letterSpacing: '-0.02em', WebkitBackgroundClip: 'text' }}>
                             {participants.find(p => p.id === bracket.find(s => s.round === 3).winner_id)?.username}
-                            <Crown size={40} color="#fbbf24" />
-                        </h2>
-                        <p style={{ color: '#fbbf24', fontSize: '1rem', fontWeight: 600, opacity: 0.8 }}>Climbed the bracket and claimed total victory</p>
+                        </h1>
+                        
+                        <p style={{ color: '#fbbf24', fontSize: '1.25rem', marginTop: '1rem', opacity: 0.8, fontWeight: 500 }}>The absolute ruler of this tournament.</p>
+                        
+                        <div style={{ marginTop: '3rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                            <button className="btn-primary" onClick={() => navigate('/lobby')} style={{ padding: '1rem 2rem', background: '#fbbf24', color: '#000' }}>Return to Lobby</button>
+                            {/* Option to close overlay and see bracket */}
+                            <button className="btn-secondary" onClick={() => {
+                                const overlay = document.getElementById('champion-overlay');
+                                if (overlay) overlay.style.display = 'none';
+                            }} style={{ padding: '1rem 2rem' }}>View Final Bracket</button> 
+                        </div>
                     </div>
+
                     <style>{`
-                        @keyframes pulse-gold {
-                            0%, 100% { box-shadow: 0 0 20px rgba(251,191,36,0.1); }
-                            50% { box-shadow: 0 0 40px rgba(251,191,36,0.2); }
+                        @keyframes pop-in {
+                            0% { transform: scale(0.8); opacity: 0; }
+                            100% { transform: scale(1); opacity: 1; }
+                        }
+                        @keyframes fade-in {
+                            from { opacity: 0; }
+                            to { opacity: 1; }
                         }
                     `}</style>
                 </div>
