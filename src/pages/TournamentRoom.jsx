@@ -4,8 +4,9 @@ import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../contexts/AuthContext';
 import { 
     Users, Trophy, Zap, AlertTriangle, 
-    ArrowRight, Sword, Shield, Loader2, Play, Info
+    ArrowRight, Sword, Shield, Loader2, Play, Info, Crown
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 
 export default function TournamentRoom() {
     const { id } = useParams();
@@ -17,6 +18,7 @@ export default function TournamentRoom() {
     const [bracket, setBracket] = useState([]);
     const [loading, setLoading] = useState(true);
     const [starting, setStarting] = useState(false);
+    const [celebrated, setCelebrated] = useState(false);
 
     useEffect(() => {
         fetchData();
@@ -53,6 +55,39 @@ export default function TournamentRoom() {
         if (b) setBracket(b);
 
         setLoading(false);
+
+        // Check for winner of Finals (Round 3)
+        const finals = b?.find(s => s.round === 3 && s.winner_id);
+        if (finals && !celebrated) {
+            launchWinnerCelebration();
+            setCelebrated(true);
+        }
+    };
+
+    const launchWinnerCelebration = () => {
+        const end = Date.now() + 5 * 1000;
+        const colors = ['#facc15', '#fbbf24', '#ffffff'];
+
+        (function frame() {
+            confetti({
+                particleCount: 3,
+                angle: 60,
+                spread: 55,
+                origin: { x: 0 },
+                colors: colors
+            });
+            confetti({
+                particleCount: 3,
+                angle: 120,
+                spread: 55,
+                origin: { x: 1 },
+                colors: colors
+            });
+
+            if (Date.now() < end) {
+                requestAnimationFrame(frame);
+            }
+        }());
     };
 
     const handleStart = async () => {
@@ -129,6 +164,41 @@ export default function TournamentRoom() {
     return (
         <div className="page-container" style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem' }}>
             
+            
+            {/* CHAMPION BANNER */}
+            {bracket.find(s => s.round === 3 && s.winner_id) && (
+                <div className="glass-panel" style={{ 
+                    padding: '2rem', marginBottom: '2rem', textAlign: 'center', 
+                    background: 'linear-gradient(45deg, rgba(251,191,36,0.1), rgba(251,191,36,0.02))',
+                    border: '1px solid rgba(251,191,36,0.3)',
+                    position: 'relative', overflow: 'hidden',
+                    animation: 'pulse-gold 2s infinite ease-in-out'
+                }}>
+                    <div style={{ position: 'absolute', top: -20, left: -20, opacity: 0.1 }}><Crown size={120} color="#fbbf24" /></div>
+                    <div style={{ position: 'absolute', bottom: -20, right: -20, opacity: 0.1 }}><Crown size={120} color="#fbbf24" /></div>
+                    
+                    <div style={{ position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                            <div style={{ background: '#fbbf24', color: '#000', padding: '0.4rem 1.25rem', borderRadius: '100px', fontSize: '0.75rem', fontWeight: 900, letterSpacing: '0.1em' }}>
+                                TOURNAMENT CHAMPION
+                            </div>
+                        </div>
+                        <h2 style={{ fontSize: '3rem', fontWeight: 900, color: '#fff', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                            <Crown size={40} color="#fbbf24" />
+                            {participants.find(p => p.id === bracket.find(s => s.round === 3).winner_id)?.username}
+                            <Crown size={40} color="#fbbf24" />
+                        </h2>
+                        <p style={{ color: '#fbbf24', fontSize: '1rem', fontWeight: 600, opacity: 0.8 }}>Climbed the bracket and claimed total victory</p>
+                    </div>
+                    <style>{`
+                        @keyframes pulse-gold {
+                            0%, 100% { box-shadow: 0 0 20px rgba(251,191,36,0.1); }
+                            50% { box-shadow: 0 0 40px rgba(251,191,36,0.2); }
+                        }
+                    `}</style>
+                </div>
+            )}
+
             {/* Room Header */}
             <header className="glass-panel" style={{ padding: '2rem', marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderLeft: '4px solid var(--primary)' }}>
                 <div>
