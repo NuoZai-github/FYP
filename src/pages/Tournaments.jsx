@@ -15,6 +15,7 @@ export default function Tournaments() {
     const [isJoining, setIsJoining] = useState(false);
     const [newTourney, setNewTourney] = useState({ name: '', max: 8 });
     const [joinCode, setJoinCode] = useState('');
+    const [selectedRole, setSelectedRole] = useState('player'); // player or spectator
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -83,7 +84,7 @@ export default function Tournaments() {
             }
             const { error: jErr } = await supabase
                 .from('tournament_participants')
-                .insert({ tournament_id: tourney.id, user_id: user.id });
+                .insert({ tournament_id: tourney.id, user_id: user.id, role: selectedRole });
                 
             if (!jErr || jErr.code === '23505') { // Success or already joined
                 navigate(`/tournament/${tourney.id}`);
@@ -148,22 +149,39 @@ export default function Tournaments() {
                                 <div style={{ background: 'rgba(255,255,255,0.05)', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 800, color: 'var(--primary)', flex: '0 0 auto' }}>
                                     #{t.join_code}
                                 </div>
-                                <button
-                                    className="btn-primary"
-                                    onClick={async () => {
-                                        // Quick Join Logic
-                                        try {
-                                            const { data: tourney } = await supabase.from('tournament_participants').select('user_id').eq('tournament_id', t.id).eq('user_id', user.id).single();
-                                            if (!tourney) {
-                                                await supabase.from('tournament_participants').insert({ tournament_id: t.id, user_id: user.id });
-                                            }
-                                        } catch (err) { /* ignore single error */ }
-                                        navigate(`/tournament/${t.id}`);
-                                    }}
-                                    style={{ flex: 1, padding: '0.6rem 1rem', fontSize: '0.85rem' }}
-                                >
-                                    Join & Enter <ArrowRight size={14} />
-                                </button>
+                                <div style={{ display: 'flex', gap: '0.4rem', flex: 1 }}>
+                                    <button
+                                        className="btn-secondary"
+                                        onClick={async () => {
+                                            try {
+                                                const { data: tourney } = await supabase.from('tournament_participants').select('user_id').eq('tournament_id', t.id).eq('user_id', user.id).single();
+                                                if (!tourney) {
+                                                    await supabase.from('tournament_participants').insert({ tournament_id: t.id, user_id: user.id, role: 'spectator' });
+                                                }
+                                            } catch (err) { }
+                                            navigate(`/tournament/${t.id}`);
+                                        }}
+                                        style={{ padding: '0.6rem', fontSize: '0.75rem', flex: '0 0 auto' }}
+                                        title="Watch as Spectator"
+                                    >
+                                        Watch
+                                    </button>
+                                    <button
+                                        className="btn-primary"
+                                        onClick={async () => {
+                                            try {
+                                                const { data: tourney } = await supabase.from('tournament_participants').select('user_id').eq('tournament_id', t.id).eq('user_id', user.id).single();
+                                                if (!tourney) {
+                                                    await supabase.from('tournament_participants').insert({ tournament_id: t.id, user_id: user.id, role: 'player' });
+                                                }
+                                            } catch (err) { }
+                                            navigate(`/tournament/${t.id}`);
+                                        }}
+                                        style={{ flex: 1, padding: '0.6rem 1rem', fontSize: '0.85rem' }}
+                                    >
+                                        Compete <ArrowRight size={14} />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -222,6 +240,27 @@ export default function Tournaments() {
                                     required maxLength={6}
                                     value={joinCode} onChange={e => setJoinCode(e.target.value)}
                                 />
+                            </div>
+                            <div style={{ marginBottom: '2rem' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem', textTransform: 'uppercase' }}>Join As</label>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                    <button 
+                                        type="button" 
+                                        className={selectedRole === 'player' ? 'btn-primary' : 'btn-secondary'}
+                                        onClick={() => setSelectedRole('player')}
+                                        style={{ padding: '0.5rem' }}
+                                    >
+                                        Player
+                                    </button>
+                                    <button 
+                                        type="button" 
+                                        className={selectedRole === 'spectator' ? 'btn-primary' : 'btn-secondary'}
+                                        onClick={() => setSelectedRole('spectator')}
+                                        style={{ padding: '0.5rem' }}
+                                    >
+                                        Spectator
+                                    </button>
+                                </div>
                             </div>
                             <button type="submit" className="btn-primary" style={{ width: '100%', padding: '1rem' }}>Join Tournament</button>
                             <button type="button" className="btn-secondary" style={{ width: '100%', padding: '1rem', marginTop: '1rem' }} onClick={() => setIsJoining(false)}>Cancel</button>

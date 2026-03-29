@@ -46,8 +46,8 @@ export default function TournamentRoom() {
         const { data: t } = await supabase.from('tournaments').select(`*, creator:profiles!creator_id(username)`).eq('id', id).single();
         if (t) setTournament(t);
 
-        const { data: p } = await supabase.from('tournament_participants').select('profiles(*)').eq('tournament_id', id);
-        if (p) setParticipants(p.map(x => x.profiles));
+        const { data: p } = await supabase.from('tournament_participants').select('role, profiles(*)').eq('tournament_id', id);
+        if (p) setParticipants(p.map(x => ({ ...x.profiles, role: x.role })));
 
         const { data: b } = await supabase.from('tournament_bracket').select('*').eq('tournament_id', id).order('round', { ascending: true }).order('slot_index', { ascending: true });
         if (b) setBracket(b);
@@ -139,7 +139,14 @@ export default function TournamentRoom() {
                         </span>
                     </div>
                     <div style={{ display: 'flex', color: 'var(--text-secondary)', gap: '1.5rem', fontSize: '0.9rem' }}>
-                        <span><Users size={14} /> {participants.length} / {tournament?.max_participants} Participants</span>
+                        <span>
+                            <Users size={14} /> {participants.filter(p => p.role === 'player').length} / {tournament?.max_participants} Players
+                            {participants.filter(p => p.role === 'spectator').length > 0 && (
+                                <span style={{ marginLeft: '1rem', color: 'var(--primary)', opacity: 0.8 }}>
+                                    ({participants.filter(p => p.role === 'spectator').length} Spectators)
+                                </span>
+                            )}
+                        </span>
                         <span><Shield size={14} /> Created by {tournament?.creator?.username}</span>
                         <span style={{ color: 'var(--primary)', fontWeight: 800 }}>INVITE CODE: {tournament?.join_code}</span>
                     </div>
@@ -148,7 +155,7 @@ export default function TournamentRoom() {
                     {isCreator ? (
                         <>
                             {tournament?.status === 'waiting' && (
-                                <button className="btn-primary" onClick={handleStart} disabled={starting || participants.length < 2}>
+                                <button className="btn-primary" onClick={handleStart} disabled={starting || participants.filter(p => p.role === 'player').length < 2}>
                                     {starting ? 'SEEDING...' : <><Play size={18} /> START</>}
                                 </button>
                             )}
@@ -174,17 +181,39 @@ export default function TournamentRoom() {
                             <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <Users size={20} /> Waiting Lobby
                             </h2>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
-                                {participants.map(p => (
-                                    <div key={p.id} className="glass-panel" style={{ padding: '1rem', textAlign: 'center', background: 'rgba(255,255,255,0.03)' }}>
-                                        <div style={{ width: '40px', height: '40px', background: 'var(--primary-gradient)', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
-                                            {p.username[0]}
+                            <div style={{ marginBottom: '2rem' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.1em' }}>Combatants</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1rem' }}>
+                                    {participants.filter(p => p.role === 'player').map(p => (
+                                        <div key={p.id} className="glass-panel" style={{ padding: '1rem', textAlign: 'center', background: 'rgba(255,255,255,0.03)', border: p.id === user.id ? '1px solid var(--primary)' : '1px solid transparent' }}>
+                                            <div style={{ width: '40px', height: '40px', background: 'var(--primary-gradient)', borderRadius: '50%', margin: '0 auto 0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>
+                                                {p.username[0]}
+                                            </div>
+                                            <div style={{ fontWeight: 600 }}>{p.username}</div>
+                                            <div style={{ fontSize: '0.75rem', color: '#10b981' }}>Operator Ready</div>
                                         </div>
-                                        <div style={{ fontWeight: 600 }}>{p.username}</div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Operator Ready</div>
-                                    </div>
-                                ))}
+                                    ))}
+                                    {participants.filter(p => p.role === 'player').length === 0 && (
+                                        <div style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Waiting for players...</div>
+                                    )}
+                                </div>
                             </div>
+
+                            {participants.filter(p => p.role === 'spectator').length > 0 && (
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '1rem', letterSpacing: '0.1em' }}>Watchers</div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
+                                        {participants.filter(p => p.role === 'spectator').map(p => (
+                                            <div key={p.id} className="glass-panel" style={{ padding: '0.5rem 1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: '100px' }}>
+                                                <div style={{ width: '20px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '50%', fontSize: '0.65rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    {p.username[0]}
+                                                </div>
+                                                <span style={{ fontSize: '0.85rem' }}>{p.username}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="glass-panel" style={{ padding: '2rem', overflowX: 'auto' }}>
