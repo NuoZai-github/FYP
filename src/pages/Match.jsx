@@ -73,7 +73,7 @@ export default function Match() {
                 // Fetch Challenge
                 const { data: challengeData } = await supabase
                     .from('challenges')
-                    .select('title, description, category, difficulty')
+                    .select('title, description, category, difficulty, external_link')
                     .eq('id', matchData.challenge_id)
                     .single();
                 if (challengeData) setChallenge(challengeData);
@@ -138,6 +138,32 @@ export default function Match() {
                     <div style={{ lineHeight: '1.6', fontSize: '1.05rem', color: '#e2e8f0' }}>
                         {challenge?.description}
                     </div>
+
+                    {/* TARGET LINK BUTTON */}
+                    {challenge?.external_link && (
+                        <div style={{ marginTop: '1.5rem' }}>
+                            <a 
+                                href={challenge.external_link === '/' ? window.location.origin : challenge.external_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="btn-secondary"
+                                style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.5rem', 
+                                    textDecoration: 'none',
+                                    background: 'rgba(16, 185, 129, 0.1)',
+                                    color: '#10b981',
+                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                    padding: '0.75rem 1.25rem',
+                                    fontSize: '0.9rem',
+                                    fontWeight: 700
+                                }}
+                            >
+                                <Globe size={16} /> VISIT CHALLENGE TARGET
+                            </a>
+                        </div>
+                    )}
                     
                     <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
                         <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem' }}>
