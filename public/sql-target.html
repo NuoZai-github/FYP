@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DB-QUERY PANEL | INTERNAL</title>
+    <style>
+        body {
+            background: #111827;
+            color: #e5e7eb;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            background: #1f2937;
+            border: 1px solid #374151;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 650px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px dashed #4b5563;
+        }
+        .badge {
+            background: #10b981;
+            color: #000;
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 2rem;
+        }
+        input {
+            flex-grow: 1;
+            background: #0f172a;
+            border: 1px solid #334155;
+            padding: 0.75rem 1rem;
+            color: #fff;
+            border-radius: 6px;
+            outline: none;
+        }
+        input:focus { border-color: #6366f1; }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 0 1.5rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover { background: #4f46e5; }
+        .result-panel {
+            background: #000;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.9rem;
+            min-height: 150px;
+            color: #10b981;
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        th, td { border: 1px solid #333; padding: 10px; text-align: left; }
+        th { background: #222; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h2 style="margin:0; font-size: 1.25rem;">Staff Member Directory</h2>
+                <span style="font-size: 0.8rem; color: #9ca3af;">Internal Records Database v4.2</span>
+            </div>
+            <span class="badge">SECURED</span>
+        </header>
+
+        <p style="font-size: 0.9rem; margin-bottom: 1rem;">Enter staff ID to search records:</p>
+        <div class="search-box">
+            <input type="text" id="query" placeholder="e.g. 101" value="101">
+            <button onclick="search()">EXECUTE</button>
+        </div>
+
+        <div class="result-panel" id="results">
+            <div style="color: #666;">-- Query ready --</div>
+        </div>
+    </div>
+
+    <script>
+        const mockData = [
+            { id: 101, name: 'Alice Smith', position: 'Security Lead' },
+            { id: 102, name: 'Bob Johnson', position: 'Backend dev' }
+        ];
+
+        function search() {
+            const val = document.getElementById('query').value;
+            const res = document.getElementById('results');
+            res.innerHTML = '<div style="color: #444;">SELECT * FROM users WHERE id = \'' + val + '\'</div>';
+
+            setTimeout(() => {
+                // Check for UNION injection
+                const lowerVal = val.toLowerCase();
+                if (lowerVal.includes('union') && lowerVal.includes('select')) {
+                    if (lowerVal.includes('hidden_flags')) {
+                        res.innerHTML += '<table><tr><th>ID</th><th>Secret_Flag</th><th>Notes</th></tr><tr><td>1</td><td>CTF{un1on_select_mast3r}</td><td>Hidden system record</td></tr></table>';
+                    } else {
+                        res.innerHTML += '<div style="color: #ef4444; margin-top: 10px;">SQL ERROR: Column mismatch in UNION operation.</div>';
+                    }
+                } else if (val === '101') {
+                    res.innerHTML += '<table><tr><th>ID</th><th>Name</th><th>Position</th></tr><tr><td>101</td><td>Alice Smith</td><td>Security Lead</td></tr></table>';
+                } else if (val === '102') {
+                    res.innerHTML += '<table><tr><th>ID</th><th>Name</th><th>Position</th></tr><tr><td>102</td><td>Bob Johnson</td><td>Backend dev</td></tr></table>';
+                } else {
+                    res.innerHTML += '<div style="margin-top: 10px;">No records found.</div>';
+                }
+            }, 500);
+        }
+    </script>
+</body>
+</html>
