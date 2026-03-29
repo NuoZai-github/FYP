@@ -119,14 +119,13 @@ export default function TournamentRoom() {
                 return;
             }
             
-            // Pick a random challenge
-            const { data: challenges, error: cErr } = await supabase.from('challenges').select('id').limit(10);
-            if (cErr || !challenges || challenges.length === 0) {
-                alert("Critical Error: No CTF challenges found in database. Please contact Admin.");
+            // Use the challenge_id pre-seeded in the bracket slot
+            const challengeId = slot.challenge_id;
+            
+            if (!challengeId) {
+                alert("Critical Error: No challenge assigned to this slot.");
                 return;
             }
-
-            const randomChallenge = challenges[Math.floor(Math.random() * challenges.length)].id;
 
             // Check if match already created by opponent (Double safety)
             const { data: existing } = await supabase.from('tournament_bracket').select('match_id').eq('id', bracket_id).single();
@@ -140,7 +139,7 @@ export default function TournamentRoom() {
                 .insert({
                     player1_id: slot.player1_id,
                     player2_id: slot.player2_id,
-                    challenge_id: randomChallenge
+                    challenge_id: challengeId
                 })
                 .select()
                 .single();
@@ -318,7 +317,17 @@ export default function TournamentRoom() {
                                             {round === 1 ? 'Quarter-Finals' : round === 2 ? 'Semi-Finals' : 'Finals'}
                                         </div>
                                         {bracket.filter(s => s.round === round).map(slot => (
-                                            <div key={slot.id} className={`glass-panel ${slot.winner_id ? 'border-primary' : ''}`} style={{ padding: 0, overflow: 'hidden' }}>
+                                            <div key={slot.id} className={`glass-panel ${slot.winner_id ? 'border-primary' : ''}`} style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
+                                                {/* Difficulty indicator */}
+                                                <div style={{ 
+                                                    position: 'absolute', top: 0, right: 0, 
+                                                    background: round === 1 ? 'rgba(34,197,94,0.1)' : round === 2 ? 'rgba(234,179,8,0.1)' : 'rgba(239,68,68,0.1)',
+                                                    color: round === 1 ? '#22c55e' : round === 2 ? '#eab308' : '#ef4444',
+                                                    fontSize: '0.65rem', padding: '0.1rem 0.5rem', borderRadius: '0 0 0 8px', fontWeight: 900,
+                                                    textTransform: 'uppercase', letterSpacing: '0.05em'
+                                                }}>
+                                                    {round === 1 ? 'EASY' : round === 2 ? 'MEDIUM' : 'HARD'}
+                                                </div>
                                                 {/* Player 1 */}
                                                 <div style={{ padding: '0.8rem 1rem', background: slot.winner_id === slot.player1_id ? 'rgba(16, 185, 129, 0.1)' : 'transparent', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                                                     <span style={{ fontSize: '0.9rem', color: slot.player1_id ? '#fff' : 'var(--text-secondary)' }}>
