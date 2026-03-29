@@ -166,7 +166,7 @@ export default function TournamentRoom() {
             
             {/* FULL SCREEN CHAMPION CELEBRATION */}
             {bracket.find(s => s.round === 3 && s.winner_id) && (
-                <div style={{ 
+                <div id="champion-overlay" style={{ 
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
                     zIndex: 9999, pointerEvents: 'none', // Allows clicking through if needed
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
