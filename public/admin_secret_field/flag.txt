@@ -1,0 +1,2 @@
+Congratulations! You found the robots' forbidden lair.
+The flag is: CTF{r0b0ts_4re_w4tching}

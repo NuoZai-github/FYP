@@ -1,0 +1,4 @@
+User-agent: *
+Disallow: /admin_secret_field/
+
+# Good job! Now visit http://localhost:5173/admin_secret_field/

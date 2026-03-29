@@ -17,7 +17,16 @@ const PrivateRoute = ({ children }) => {
   return user ? children : <Navigate to="/login" />;
 };
 
+import { useEffect } from 'react';
+
 function App() {
+  useEffect(() => {
+    // CTF Challenge: Cookie Hunt
+    if (!document.cookie.includes('Session-Flag')) {
+      document.cookie = "Session-Flag=CTF{sweet_c00kie_collector}; path=/; max-age=31536000";
+    }
+  }, []);
+
   return (
     <AuthProvider>
       <Router>
