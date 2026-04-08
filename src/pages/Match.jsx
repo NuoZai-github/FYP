@@ -166,20 +166,36 @@ export default function Match() {
                     )}
                     
                     <div style={{ marginTop: '2.5rem', padding: '1.5rem', background: 'rgba(0,0,0,0.3)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                        <form onSubmit={handleSubmit} style={{ display: 'flex', gap: '1rem' }}>
+                        <form 
+                            onSubmit={handleSubmit} 
+                            style={{ 
+                                display: 'flex', 
+                                gap: '1rem', 
+                                padding: '1.25rem', 
+                                borderTop: '1px solid rgba(255,255,255,0.05)',
+                                opacity: (profile?.id !== match?.player1_id && profile?.id !== match?.player2_id) ? 0.6 : 1,
+                                pointerEvents: (profile?.id !== match?.player1_id && profile?.id !== match?.player2_id) ? 'none' : 'auto'
+                            }}
+                        >
                             <div style={{ position: 'relative', flex: 1 }}>
                                 <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }} />
                                 <input 
-                                    className="input-field" placeholder="Enter Flag: CTF{...}"
+                                    className="input-field" 
+                                    placeholder={(profile?.id !== match?.player1_id && profile?.id !== match?.player2_id) ? "SPECTATOR MODE - VIEW ONLY" : "Enter Flag: CTF{...}"}
                                     value={flag} onChange={(e) => setFlag(e.target.value)}
                                     style={{ paddingLeft: '3rem', marginBottom: 0, background: 'rgba(0,0,0,0.5)' }}
-                                    disabled={submitting}
+                                    disabled={submitting || (profile?.id !== match?.player1_id && profile?.id !== match?.player2_id)}
                                 />
                             </div>
-                            <button className="btn-primary" disabled={submitting} style={{ padding: '0 2rem' }}>
+                            <button className="btn-primary" disabled={submitting || (profile?.id !== match?.player1_id && profile?.id !== match?.player2_id)} style={{ padding: '0 2rem' }}>
                                 {submitting ? 'VALIDATING...' : 'SUBMIT'}
                             </button>
                         </form>
+                        {(profile?.id !== match?.player1_id && profile?.id !== match?.player2_id) && (
+                            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}>
+                                <Info size={12} /> You are spectating this battle.
+                            </div>
+                        )}
                         {message && <div style={{ marginTop: '1rem', color: '#f43f5e', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <AlertCircle size={14} /> {message}
                         </div>}

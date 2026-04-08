@@ -59,8 +59,12 @@ export default function TournamentRoom() {
         // Check for winner of Finals (Round 3)
         const finals = b?.find(s => s.round === 3 && s.winner_id);
         if (finals && !celebrated) {
-            launchWinnerCelebration();
-            setCelebrated(true);
+            const hasCelebrated = localStorage.getItem(`celebrated-${id}`);
+            if (!hasCelebrated) {
+                launchWinnerCelebration();
+                setCelebrated(true);
+                localStorage.setItem(`celebrated-${id}`, 'true');
+            }
         }
     };
 
@@ -343,16 +347,27 @@ export default function TournamentRoom() {
                                                     {slot.winner_id === slot.player2_id && <Zap size={14} color="#10b981" />}
                                                 </div>
                                                 {/* Action Button */}
-                                                {(slot.player1_id === user.id || slot.player2_id === user.id) && !slot.winner_id && (
+                                                {(slot.player1_id || slot.player2_id) && !slot.winner_id && (
                                                     <button 
                                                         className={slot.match_id ? "btn-warn" : "btn-primary"} 
-                                                        style={{ width: '100%', borderRadius: 0, padding: '0.4rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
-                                                        onClick={() => slot.match_id ? navigate(`/match/${slot.match_id}`) : createMatchForSlot(slot.id)}
+                                                        style={{ 
+                                                            width: '100%', borderRadius: 0, padding: '0.4rem', fontSize: '0.8rem', 
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                                            opacity: (!slot.player1_id || !slot.player2_id) ? 0.5 : 1,
+                                                            cursor: (!slot.player1_id || !slot.player2_id) ? 'not-allowed' : 'pointer',
+                                                            background: (slot.player1_id === user.id || slot.player2_id === user.id) ? '' : 'rgba(56, 189, 248, 0.2)',
+                                                            color: (slot.player1_id === user.id || slot.player2_id === user.id) ? '' : '#38bdf8',
+                                                            border: (slot.player1_id === user.id || slot.player2_id === user.id) ? '' : '1px solid rgba(56, 189, 248, 0.4)'
+                                                        }}
+                                                        onClick={() => {
+                                                            if (!slot.player1_id || !slot.player2_id) return;
+                                                            slot.match_id ? navigate(`/match/${slot.match_id}`) : createMatchForSlot(slot.id);
+                                                        }}
                                                     >
-                                                        {slot.match_id ? (
-                                                            <><Zap size={14} /> OPPONENT READY - ENTER</>
+                                                        {(slot.player1_id === user.id || slot.player2_id === user.id) ? (
+                                                            slot.match_id ? <><Zap size={14} /> ENTER MATCH</> : <><Sword size={14} /> COMMENCE BATTLE</>
                                                         ) : (
-                                                            <><Sword size={14} /> BATTLE</>
+                                                            slot.match_id ? <><Info size={14} /> SPECTATE LIVE</> : <><Loader2 size={14} className="animate-spin" /> WAITING...</>
                                                         )}
                                                     </button>
                                                 )}
